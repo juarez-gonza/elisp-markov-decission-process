@@ -70,10 +70,10 @@
 			  ,(or action-term 'min-action-term)
 			  ,state-actions*))
 
-;; (mdp-bellman-eq-body (:u :d :e)
-;;   ((:name A :cost 10 :u 0.5 :d 0.3 :e 0.2) (:name B :cost 25 :u 0.2 :d 0.7 :e 0.1))
-;;   ((:name A :cost 10 :u 0.8 :e 0.2) (:name B :cost 25 :d 0.3 :e 0.7))
-;;   ())
+;; (mdp-bellman-body (:u :d :e)
+;; 		  (((:name A :cost 10 :u 0.5 :d 0.3 :e 0.2) (:name B :cost 25 :u 0.2 :d 0.7 :e 0.1))
+;; 		   ((:name A :cost 10 :u 0.8 :e 0.2) (:name B :cost 25 :d 0.3 :e 0.7))
+;; 		   ()))
 ;; translates to
 ;; (cons
 ;;  (min (+ 10 (sum-of-mul vs!! (list 0.5 0.3 0.2)))
