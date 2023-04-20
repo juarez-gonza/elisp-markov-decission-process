@@ -136,3 +136,6 @@
 
 ;;; Solve the MDP
 ;; (solve-mdp mdp-ex-4)
+
+
+(provide 'mdp-lib)
