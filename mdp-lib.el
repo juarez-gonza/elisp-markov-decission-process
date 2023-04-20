@@ -13,8 +13,8 @@
 
 (defalias 'sum-of-mul (-partial #'zip->reduce-inclusive #'* #'+))
 
-(defmacro --min-by* (min &rest expr*)
-  `(--min-by ,min (list ,@expr*)))
+(defmacro --min-by* (min-form &rest expr*)
+  `(--min-by ,min-form (list ,@expr*)))
 
 (defun take-stepped (xs step &optional init)
   (-select-by-indices (-iota (/ (length xs) step) (or init 0) step)
