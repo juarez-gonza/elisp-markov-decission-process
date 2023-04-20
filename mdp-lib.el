@@ -1,8 +1,6 @@
 (require 'dash)
 (require 'cl-lib)
 
-;; TODO: update action examples with :name field
-
 (defun bellman-iterate (bellman-iteration num-of-states)
   "Fixed point on bellman equations with initial value set to 0"
   (funcall (-fixfn bellman-iteration)
@@ -34,12 +32,12 @@
   (let ((state:prob (action-state:prob->alist (action-state:prob state-action))))
     `(list ,@(--map (car (alist-get it state:prob '(0.0))) ; default probability if not found in state:prob is 0.0
 		    state-names))))
-;; (ordered-action-probs (:u :d :e) (:cost 10 :u 0.5 :e 0.2)) translates to (0.5 0.0 0.2)
+;; (ordered-action-probs (:u :d :e) (:name A :cost 10 :u 0.5 :e 0.2)) translates to (0.5 0.0 0.2)
 
 (defmacro min-action-term (state-names state-action)
   `(+ ,(action-cost state-action)
       (sum-of-mul vs!! (ordered-action-probs ,state-names ,state-action))))
-;; (min-action-term (:u :d :e) (:cost 10 :u 0.5 :d 0.3 :e 0.2))
+;; (min-action-term (:u :d :e) (:name A :cost 10 :u 0.5 :d 0.3 :e 0.2))
 ;; translates to (+ 10 (sum-of-mul vs!! (list 0.5 0.3 0.2)))
 
 (defmacro min-tagged-action-term (state-names state-action)
@@ -132,7 +130,7 @@
 
 ;;; Usage example
 ;;; Define the MDP with key-valued arguments where :key is the name of the state
-;;; and the value is a list of actions indicating action :cost followed by probability of some or all states
+;;; and the value is a list of actions indicating action :name and :cost followed by probability of some or all states
 ;;; States with no actions (usually the final state) can have an empty list as their value (see :e below)
 
 (define-mdp mdp-ex-4
