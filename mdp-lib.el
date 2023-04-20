@@ -18,8 +18,8 @@
 		      xs))
 
 ;; action is represented as (:cost Number [:state-name Probability]*)
-(defun action-cost (state-action) (cadr state-action))
-(defun action-state:prob (state-action) (cddr state-action))
+(defalias 'action-cost #'cadr)
+(defalias 'action-state:prob #'cddr)
 
 (defalias 'action-state:prob->alist (-partial #'-partition-in-steps 2 2))
 ;; (action-state:prob->alist '(:u 0.5 :d 0.3 :e 0.2)) translates to '((:u 0.5) (:d 0.3) (:e 0.2))
@@ -75,12 +75,12 @@
 ;;; and the value is a list of actions indicating action :cost followed by probability of some or all states
 ;;; States with no actions (usually the final state) can have an empty list as their value (see :e below)
 
-;; (define-mdp mdp-ex-4
-;;   :u ((:cost 10 :u 0.5 :d 0.3 :e 0.2)
-;;       (:cost 25 :u 0.2 :d 0.7 :e 0.1))
-;;   :d ((:cost 10 :u 0.8 :e 0.2)
-;;       (:cost 25 :d 0.3 :e 0.7))
-;;   :e ())
+(define-mdp mdp-ex-4
+  :u ((:cost 10 :u 0.5 :d 0.3 :e 0.2)
+      (:cost 25 :u 0.2 :d 0.7 :e 0.1))
+  :d ((:cost 10 :u 0.8 :e 0.2)
+      (:cost 25 :d 0.3 :e 0.7))
+  :e ())
 
 ;;; This translates to roughly the following
 
