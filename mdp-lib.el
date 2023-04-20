@@ -134,18 +134,5 @@
       (:name Staff :cost 25 :d 0.3 :e 0.7))
   :e ())
 
-;;; This translates to roughly the following
-
-;; (defun mdp-ex-4-expanded (ude)
-;;   (list
-;;    (min (+ 10 (sum-of-mul ude '(0.5 0.3 0.2)))
-;; 	(+ 25 (sum-of-mul ude '(0.2 0.7 0.1))))
-;;    (min (+ 10 (sum-of-mul ude '(0.8 0.0 0.2)))
-;; 	(+ 25 (sum-of-mul ude '(0.0 0.3 0.7))))
-;;    0))
-
 ;;; Solve the MDP
 ;; (solve-mdp mdp-ex-4)
-
-;;; Same result as the manually specified mdp
-;; (bellman-iterate #'mdp-ex-4-expanded 3)
