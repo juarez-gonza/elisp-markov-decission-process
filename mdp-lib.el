@@ -1,5 +1,4 @@
 (require 'dash)
-(require 'cl-lib)
 
 (defun bellman-iterate (bellman-iteration num-of-states)
   "Fixed point on bellman equations with initial value set to 0"
@@ -106,8 +105,8 @@
   (cons bellman-equations (cons tagged-bellman-equations state-names)))
 
 (defmacro define-mdp (name &rest state:actions*)
-  (cl-symbol-macrolet ((state-names (take-stepped state:actions* 2 0))
-		       (state-actions (take-stepped state:actions* 2 1)))
+  (let ((state-names (take-stepped state:actions* 2 0))
+	(state-actions (take-stepped state:actions* 2 1)))
     `(setq ,name ; parameter name `vs!!` finishes in !! to mark the name as non-hygienic capturable
 	   (make-mdp (lambda (vs!!) (mdp-bellman-eq-body ,state-names ,@state-actions))
 		     (lambda (vs!!) (mdp-tagged-bellman-eq-body ,state-names ,@state-actions))
