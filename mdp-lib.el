@@ -15,6 +15,9 @@
 
 (defalias 'sum-of-mul (-partial #'zip->reduce-inclusive #'* #'+))
 
+(defmacro --min-by* (min &rest expr*)
+  `(--min-by ,min (list ,@expr*)))
+
 (defun take-stepped (xs step &optional init)
   (-select-by-indices (-iota (/ (length xs) step) (or init 0) step)
 		      xs))
@@ -49,16 +52,18 @@
 ;; (min-action (:u :d :e) ((:cost 10 :u 0.5 :d 0.3 :e 0.2) (:cost 25 :u 0.2 :d 0.7 :e 0.1)))
 ;; translates to (min (+ 10 (sum-of-mul vs!! (list 0.5 0.3 0.2))) (+ 25 (sum-of-mul vs!! (list 0.2 0.7 0.1))))
 
+(defmacro min-action-term-tagged (state-names state-action)
+  `(cons (min-action-term ,state-names ,state-action)
+	 ',(action-name state-action)))
+
 (defmacro min-action-tagged (state-names state-actions)
   (cond ((null state-actions) 0) ; base case 1: base case for states with no action at all
 	((null (cdr state-actions)) ; base case 2: base case for states with more than 1 action
-	 `(cons (min-action-term ,state-names ,(car state-actions))
-		',(action-name (car state-actions))))
+	 `(min-action-term-tagged ,state-names ,(car state-actions)))
 	(t ; recursive step on state-actions
-	 `(--min-by (> (car it) (car other))
-		    (list (cons (min-action-term ,state-names ,(car state-actions))
-				',(action-name (car state-actions)))
-			  (min-action-tagged ,state-names ,(cdr state-actions)))))))
+	 `(--min-by* (> (car it) (car other))
+		     (min-action-term-tagged ,state-names ,(car state-actions))
+		     (min-action-tagged ,state-names ,(cdr state-actions))))))
 ;; (min-action-tagged (:u :d :e) ((:name ac-2 :cost 10 :u 0.5 :d 0.3 :e 0.2) (:name ac-1 :cost 25 :u 0.2 :d 0.7 :e 0.1)))
 
 (defmacro define-mdp-impl (minimize-action state-names &rest state-actions*)
