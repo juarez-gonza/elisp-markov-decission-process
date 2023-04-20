@@ -47,16 +47,19 @@
 (defun tagged-min (tagged-action-a tagged-action-b)
   (--min-by* (> (car it) (car other)) tagged-action-a tagged-action-b))
 
-(defmacro min-action (state-names state-actions &optional min-macro min-action-term-macro)
-  (cl-symbol-macrolet ((min (or min-macro 'min))
-		       (min-action-term (or min-action-term-macro 'min-action-term)))
-    (cond ((null state-actions) 0) ; base case 1: base case for states with no action at all
-	  ((null (cdr state-actions)) ; base case 2: base case for states with more than 1 action
-	   `(,min-action-term ,state-names ,(car state-actions)))
-	  (t ; recursive step on state-actions
-	   `(,min (,min-action-term ,state-names ,(car state-actions))
-		  (min-action ,state-names ,(cdr state-actions)
-			      ,min ,min-action-term))))))
+(defmacro min-action-impl (state-names state-actions min min-action-term)
+  (cond ((null state-actions) 0) ; base case 1: base case for states with no action at all
+	((null (cdr state-actions)) ; base case 2: base case for states with more than 1 action
+	 `(,min-action-term ,state-names ,(car state-actions)))
+	(t ; recursive step on state-actions
+	 `(,min (,min-action-term ,state-names ,(car state-actions))
+		(min-action ,state-names ,(cdr state-actions)
+			    ,min ,min-action-term)))))
+
+(defmacro min-action (state-names state-actions &optional min-f min-action-term-f)
+  (cl-symbol-macrolet ((min (or min-f 'min))
+		       (min-action-term (or min-action-term-f 'min-action-term)))
+    `(min-action-impl ,state-names ,state-actions ,min ,min-action-term)))
 ;; (min-action (:u :d :e) ((:name A :cost 10 :u 0.5 :d 0.3 :e 0.2) (:name B :cost 25 :u 0.2 :d 0.7 :e 0.1)))
 ;; translates to (min (+ 10 (sum-of-mul vs!! (list 0.5 0.3 0.2))) (+ 25 (sum-of-mul vs!! (list 0.2 0.7 0.1))))
 
@@ -69,17 +72,17 @@
 ;; 			   (min-action-tagged ,state-names ,(cdr state-actions))))))
 ;; (min-action-tagged (:u :d :e) ((:name ac-2 :cost 10 :u 0.5 :d 0.3 :e 0.2) (:name ac-1 :cost 25 :u 0.2 :d 0.7 :e 0.1)))
 
-(defmacro mdp-bellman-impl (state-names &rest state-actions*)
+(defmacro mdp-bellman-eq-body (state-names &rest state-actions*)
   (if (null state-actions*) nil
     `(cons (min-action ,state-names ,(car state-actions*))
-	   (mdp-bellman-impl ,state-names ,@(cdr state-actions*)))))
+	   (mdp-bellman-eq-body ,state-names ,@(cdr state-actions*)))))
 
-(defmacro mdp-tagged-bellman-impl (state-names &rest state-actions*)
+(defmacro mdp-tagged-bellman-eq-body (state-names &rest state-actions*)
   (if (null state-actions*) nil
     `(cons (min-action ,state-names ,(car state-actions*) tagged-min min-tagged-action-term)
-	   (mdp-tagged-bellman-impl ,state-names ,@(cdr state-actions*)))))
+	   (mdp-tagged-bellman-eq-body ,state-names ,@(cdr state-actions*)))))
 
-;; (mdp-bellman-impl (:u :d :e)
+;; (mdp-bellman-eq-body (:u :d :e)
 ;;   ((:name A :cost 10 :u 0.5 :d 0.3 :e 0.2) (:name B :cost 25 :u 0.2 :d 0.7 :e 0.1))
 ;;   ((:name A :cost 10 :u 0.8 :e 0.2) (:name B :cost 25 :d 0.3 :e 0.7))
 ;;   ())
@@ -92,7 +95,7 @@
 ;;        (+ 25 (sum-of-mul vs!! (list 0.0 0.3 0.7))))
 ;;   (cons 0 nil)))
 
-;; (mdp-tagged-bellman-impl (:u :d :e)
+;; (mdp-tagged-bellman-eq-body (:u :d :e)
 ;; 			 ((:name A :cost 10 :u 0.5 :d 0.3 :e 0.2) (:name B :cost 25 :u 0.2 :d 0.7 :e 0.1))
 ;; 			 ((:name A :cost 10 :u 0.8 :e 0.2) (:name B :cost 25 :d 0.3 :e 0.7))
 ;; 			 ())
@@ -115,8 +118,8 @@
   (cl-symbol-macrolet ((state-names (take-stepped state:actions* 2 0))
 		       (state-actions (take-stepped state:actions* 2 1)))
     `(setq ,name ; parameter name `vs!!` finishes in !! to mark the name as non-hygienic capturable
-	   (make-mdp (lambda (vs!!) (mdp-bellman-impl ,state-names ,@state-actions))
-		     (lambda (vs!!) (mdp-tagged-bellman-impl ,state-names ,@state-actions))
+	   (make-mdp (lambda (vs!!) (mdp-bellman-eq-body ,state-names ,@state-actions))
+		     (lambda (vs!!) (mdp-tagged-bellman-eq-body ,state-names ,@state-actions))
 		     ',state-names))))
 
 (defun solve-mdp (mdp)
