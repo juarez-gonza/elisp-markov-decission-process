@@ -57,9 +57,9 @@
 			    ,min ,min-action-term)))))
 
 (defmacro min-action (state-names state-actions &optional min-f min-action-term-f)
-  (cl-symbol-macrolet ((min (or min-f 'min))
-		       (min-action-term (or min-action-term-f 'min-action-term)))
-    `(min-action-impl ,state-names ,state-actions ,min ,min-action-term)))
+  `(min-action-impl ,state-names ,state-actions
+		    ,(or min-f 'min)
+		    ,(or min-action-term-f 'min-action-term)))
 ;; (min-action (:u :d :e) ((:name A :cost 10 :u 0.5 :d 0.3 :e 0.2) (:name B :cost 25 :u 0.2 :d 0.7 :e 0.1)))
 ;; translates to (min (+ 10 (sum-of-mul vs!! (list 0.5 0.3 0.2))) (+ 25 (sum-of-mul vs!! (list 0.2 0.7 0.1))))
 
