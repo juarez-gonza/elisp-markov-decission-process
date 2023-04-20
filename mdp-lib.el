@@ -46,31 +46,29 @@
 (defun tagged-min (tagged-action-a tagged-action-b)
   (--min-by* (> (car it) (car other)) tagged-action-a tagged-action-b))
 
-(defmacro min-action-impl (state-names state-actions min min-action-term)
-  (cond ((null state-actions) 0) ; base case 1: base case for states with no action at all
-	((null (cdr state-actions)) ; base case 2: base case for states with more than 1 action
-	 `(,min-action-term ,state-names ,(car state-actions)))
-	(t ; recursive step on state-actions
-	 `(,min (,min-action-term ,state-names ,(car state-actions))
-		(min-action ,state-names ,(cdr state-actions)
-			    ,min ,min-action-term)))))
+(defmacro cmp-action (state-names cmp action-term state-actions)
+  (cond
+   ((null state-actions) 0) ; base case 1: base case for states with no action at all
+   ((null (cdr state-actions)) ; base case 2: base case for states with more than 1 action
+    `(,action-term ,state-names ,(car state-actions)))
+   (t ; recursive step on state-actions
+    `(,cmp (,action-term ,state-names ,(car state-actions))
+	   (cmp-action ,state-names ,cmp ,action-term
+		       ,(cdr state-actions))))))
 
-(defmacro min-action (state-names state-actions &optional min-f min-action-term-f)
-  `(min-action-impl ,state-names ,state-actions
-		    ,(or min-f 'min)
-		    ,(or min-action-term-f 'min-action-term)))
-;; (min-action (:u :d :e) ((:name A :cost 10 :u 0.5 :d 0.3 :e 0.2) (:name B :cost 25 :u 0.2 :d 0.7 :e 0.1)))
+;; (cmp-action (:u :d :e) min min-action-term ((:name A :cost 10 :u 0.5 :d 0.3 :e 0.2) (:name B :cost 25 :u 0.2 :d 0.7 :e 0.1)))
 ;; translates to (min (+ 10 (sum-of-mul vs!! (list 0.5 0.3 0.2))) (+ 25 (sum-of-mul vs!! (list 0.2 0.7 0.1))))
 
-(defmacro mdp-bellman-eq-body (state-names &rest state-actions*)
+(defmacro mdp-bellman-body-impl (state-names cmp action-term state-actions*)
   (if (null state-actions*) nil
-    `(cons (min-action ,state-names ,(car state-actions*))
-	   (mdp-bellman-eq-body ,state-names ,@(cdr state-actions*)))))
+    `(cons (cmp-action ,state-names ,cmp ,action-term ,(car state-actions*))
+	   (mdp-bellman-body-impl ,state-names ,cmp ,action-term ,(cdr state-actions*)))))
 
-(defmacro mdp-tagged-bellman-eq-body (state-names &rest state-actions*)
-  (if (null state-actions*) nil
-    `(cons (min-action ,state-names ,(car state-actions*) tagged-min min-tagged-action-term)
-	   (mdp-tagged-bellman-eq-body ,state-names ,@(cdr state-actions*)))))
+(defmacro mdp-bellman-body (state-names state-actions* &optional cmp action-term)
+  `(mdp-bellman-body-impl ,state-names
+			  ,(or cmp 'min)
+			  ,(or action-term 'min-action-term)
+			  ,state-actions*))
 
 ;; (mdp-bellman-eq-body (:u :d :e)
 ;;   ((:name A :cost 10 :u 0.5 :d 0.3 :e 0.2) (:name B :cost 25 :u 0.2 :d 0.7 :e 0.1))
@@ -83,20 +81,7 @@
 ;;  (cons
 ;;   (min (+ 10 (sum-of-mul vs!! (list 0.8 0.0 0.2)))
 ;;        (+ 25 (sum-of-mul vs!! (list 0.0 0.3 0.7))))
-;;   (cons 0 nil)))
-
-;; (mdp-tagged-bellman-eq-body (:u :d :e)
-;; 			 ((:name A :cost 10 :u 0.5 :d 0.3 :e 0.2) (:name B :cost 25 :u 0.2 :d 0.7 :e 0.1))
-;; 			 ((:name A :cost 10 :u 0.8 :e 0.2) (:name B :cost 25 :d 0.3 :e 0.7))
-;; 			 ())
-;; translates to
-;; (cons
-;;  (tagged-min (cons (+ 10 (sum-of-mul vs!! (list 0.5 0.3 0.2))) 'A)
-;; 		  (cons (+ 25 (sum-of-mul vs!! (list 0.2 0.7 0.1))) 'B))
-;;  (cons
-;;   (tagged-min (cons (+ 10 (sum-of-mul vs!! (list 0.8 0.0 0.2))) 'A)
-;; 		   (cons (+ 25 (sum-of-mul vs!! (list 0.0 0.3 0.7))) 'B))
-;;   (cons 0 nil)))
+;;   (cons 0 nil))) ;; behaviour can be customized by passing a term builder `action-term` and a comparisson
 
 (defalias 'mdp-bellman-equations #'car)
 (defalias 'mdp-tagged-bellman-equations #'cadr)
@@ -106,10 +91,11 @@
 
 (defmacro define-mdp (name &rest state:actions*)
   (let ((state-names (take-stepped state:actions* 2 0))
-	(state-actions (take-stepped state:actions* 2 1)))
+	(state-actions* (take-stepped state:actions* 2 1)))
     `(setq ,name ; parameter name `vs!!` finishes in !! to mark the name as non-hygienic capturable
-	   (make-mdp (lambda (vs!!) (mdp-bellman-eq-body ,state-names ,@state-actions))
-		     (lambda (vs!!) (mdp-tagged-bellman-eq-body ,state-names ,@state-actions))
+	   (make-mdp (lambda (vs!!) (mdp-bellman-body ,state-names ,state-actions*))
+		     (lambda (vs!!) (mdp-bellman-body ,state-names ,state-actions*
+						      tagged-min min-tagged-action-term))
 		     ',state-names))))
 
 (defun solve-mdp (mdp)
