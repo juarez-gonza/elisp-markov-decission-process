@@ -107,7 +107,7 @@
     (->> (bellman-iterate (mdp-bellman-equations mdp)
 			  (length state-names))
 	 (funcall (mdp-tagged-bellman-equations mdp))
-	 (funcall (-partial #'-zip state-names)))))
+	 (-zip state-names))))
 
 ;;; Usage example
 ;;; Define the MDP with key-valued arguments where :key is the name of the state
