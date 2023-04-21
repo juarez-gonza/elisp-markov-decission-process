@@ -109,6 +109,19 @@
 	 (funcall (mdp-tagged-bellman-equations mdp))
 	 (-zip state-names))))
 
+(defun solve&log-mdp (mdp)
+  ;; iterates with untagged bellman equations (only numeric operations)
+  ;; runs a final iteration with tagged minimization in order to get the optimal plan
+  (let ((state-names (mdp-state-names mdp))
+	(iter-count 0))
+    (->> (bellman-iterate (lambda (vs)
+			    (message "iter %d %s" iter-count (-zip-pair state-names vs))
+			    (setq iter-count (1+ iter-count))
+			    (funcall (mdp-bellman-equations mdp) vs))
+			  (length state-names))
+	 (funcall (mdp-tagged-bellman-equations mdp))
+	 (-zip state-names))))
+
 ;;; Usage example
 ;;; Define the MDP with key-valued arguments where :key is the name of the state
 ;;; and the value is a list of actions indicating action :name and :cost followed by probability of some or all states
