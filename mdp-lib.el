@@ -130,12 +130,12 @@
 (define-mdp mdp-ex-4
   :u ((:name Antivirus :cost 10 :u 0.5 :d 0.3 :e 0.2)
       (:name Staff :cost 25 :u 0.2 :d 0.7 :e 0.1))
-  :d ((:name Antivirus :cost 10 :d 0.75 :e 0.2)
+  :d ((:name Antivirus :cost 10 :d 0.75 :e 0.25)
       (:name Staff :cost 25 :d 0.3 :e 0.7))
   :e ())
 
 ;;; Solve the MDP
-;; (solve-mdp mdp-ex-4)
+;; (solve&log-mdp  mdp-ex-4)
 
 
 (provide 'mdp-lib)
